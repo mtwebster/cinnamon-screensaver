@@ -417,6 +417,12 @@ gs_window_real_realize (GtkWidget *widget)
                           widget);
 }
 
+static gboolean
+gs_window_real_popup_menu (GtkWidget *widget)
+{
+ return FALSE;
+}
+
 /* every so often we should raise the window in case
    another window has somehow gotten on top */
 static gboolean
@@ -1981,6 +1987,7 @@ gs_window_class_init (GSWindowClass *klass)
         widget_class->get_preferred_height       = gs_window_real_get_preferred_height;
         widget_class->grab_broken_event   = gs_window_real_grab_broken;
         widget_class->visibility_notify_event = gs_window_real_visibility_notify_event;
+        widget_class->popup_menu          = gs_window_real_popup_menu;
 
         g_type_class_add_private (klass, sizeof (GSWindowPrivate));
 
