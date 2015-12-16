@@ -2474,64 +2474,47 @@ gs_window_init (GSWindow *window)
                                | GDK_ENTER_NOTIFY_MASK
                                | GDK_LEAVE_NOTIFY_MASK);
 
+        /* immediate child of the GsWindow */
         window->priv->stack = gtk_stack_new();
-        window->priv->lock_screen = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-        gtk_stack_add_named (GTK_STACK (window->priv->stack), window->priv->lock_screen, "lock_screen");
+        /* stack page containing traditional clock/dialog */
+        window->priv->lock_screen = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+        /* dialog socket container */
+        window->priv->vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
+        /* left-hand side clock display */
+        window->priv->clock = gtk_label_new (NULL);
+        /* Right-hand filler */
+        GtkWidget *right_label = gtk_label_new (NULL);
+
+        gtk_box_set_homogeneous (GTK_BOX (window->priv->lock_screen), TRUE);
 
         gtk_widget_show (window->priv->stack);
         gtk_widget_show (window->priv->lock_screen);
+        gtk_widget_show (window->priv->vbox);
+        gtk_widget_show (window->priv->clock);
+        gtk_widget_show (right_label);
 
+        gtk_stack_add_named (GTK_STACK (window->priv->stack), window->priv->lock_screen, "lock_screen");
         gtk_container_add (GTK_CONTAINER (window), window->priv->stack);
 
-        GtkWidget *grid = gtk_grid_new();
+        gtk_box_pack_start (GTK_BOX (window->priv->lock_screen), window->priv->clock, TRUE, TRUE, 6);
+        gtk_box_pack_start (GTK_BOX (window->priv->lock_screen), window->priv->vbox, TRUE, TRUE, 6);
+        gtk_box_pack_start (GTK_BOX (window->priv->lock_screen), right_label, TRUE, TRUE, 6);
 
         GdkRGBA transparent_color = { 0.0, 0.0, 0.0, 0.0 };
+        gtk_widget_override_background_color(window->priv->lock_screen, GTK_STATE_NORMAL, &transparent_color);
 
-        gtk_widget_override_background_color(grid, GTK_STATE_NORMAL, &transparent_color);
-        gtk_widget_show (grid);
-                     
-        window->priv->vbox = gtk_box_new (GTK_ORIENTATION_VERTICAL, 0);
-        gtk_widget_show (window->priv->vbox);
-        
-        gtk_box_pack_start (GTK_BOX (window->priv->lock_screen), grid, TRUE, TRUE, 0);
-        gtk_container_set_border_width (GTK_CONTAINER (grid), 6);
-
-                                
-        gtk_widget_set_valign (window->priv->vbox, GTK_ALIGN_CENTER);
-        gtk_widget_set_halign (window->priv->vbox, GTK_ALIGN_CENTER);
-        gtk_widget_set_size_request(window->priv->vbox,450, -1);
-        
         // Default message        
         gchar *unesc = g_settings_get_string(window->priv->settings, "default-message");
         window->priv->default_message = g_markup_escape_text (unesc, -1);
         g_free (unesc); 
-                
-        // Clock -- need to find a way to make it appear on the bottom-left side of the background without shifting the position of the main dialog box
-        window->priv->clock = gtk_label_new (NULL);
-        gtk_widget_show (window->priv->clock);
+
         window->priv->clock_tracker = g_object_new (GNOME_TYPE_WALL_CLOCK, NULL);
         g_signal_connect (window->priv->clock_tracker, "notify::clock", G_CALLBACK (on_clock_changed), window);
         update_clock (window);
 
-        gtk_misc_set_padding (GTK_MISC (window->priv->clock), 4, 4);
-        gtk_grid_attach(GTK_GRID(grid), window->priv->clock, 0, 1, 1, 1);   
-        gtk_grid_attach(GTK_GRID(grid), window->priv->vbox, 1, 1, 1, 1);        
-        GtkWidget * right_label = gtk_label_new(NULL);        
-        gtk_widget_show (right_label);
-        gtk_grid_attach(GTK_GRID(grid), right_label, 2, 1, 1, 1); 
-                
-        gtk_grid_set_column_homogeneous (GTK_GRID(grid), TRUE);
-        gtk_grid_set_column_spacing (GTK_GRID(grid), 6);
-        
-        gtk_widget_set_valign (grid, GTK_ALIGN_CENTER);
-        gtk_widget_set_halign (grid, GTK_ALIGN_CENTER);
-        gtk_widget_set_hexpand (grid, TRUE);
-        gtk_widget_set_vexpand (grid, TRUE);
-        
         window->priv->font_message = g_settings_get_string (window->priv->settings, "font-message");
-        
-        g_signal_connect (window->priv->settings, "changed", G_CALLBACK (settings_changed_cb), window);
 
+        g_signal_connect (window->priv->settings, "changed", G_CALLBACK (settings_changed_cb), window);
         g_signal_connect (window->priv->lock_screen, "draw", G_CALLBACK (shade_background), window);
 
         create_info_bar (window);
