@@ -2,9 +2,10 @@ NULL =
 SUBDIRS = icons
 
 desktopdir = $(datadir)/applications
-desktop_in_files = cinnamon-screensaver.desktop.in
-desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
-@INTLTOOL_DESKTOP_RULE@
+desktop_DATA = cinnamon-screensaver.desktop
+
+cinnamon-screensaver.desktop: cinnamon-screensaver.desktop.in
+	$(AM_V_GEN)$(MSGFMT) --desktop --template $< -d $(localedir) -o $@
 
 dbussessionservicedir = $(DBUS_SESSION_SERVICE_DIR)
 dbussessionservice_DATA = org.cinnamon.ScreenSaver.service
@@ -15,7 +16,7 @@ EXTRA_DIST = 				\
 	$(NULL)
 
 CLEANFILES =                \
-    cinnamon-screensaver.desktop.in
+    cinnamon-screensaver.desktop
 
 MAINTAINERCLEANFILES =			\
 	*~				\

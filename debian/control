@@ -16,6 +16,7 @@ Build-Depends: debhelper (>= 9),
                libxext-dev,
                libgirepository1.0-dev,
                gobject-introspection,
+               cinnamon-l10n,
                gnome-pkg-tools (>= 0.10)
 Standards-Version: 3.9.6
 
@@ -23,6 +24,7 @@ Package: cinnamon-screensaver
 Architecture: all
 Pre-Depends: ${misc:Pre-Depends}
 Depends: cinnamon-desktop-data (>= 3.0.0),
+         cinnamon-l10n,
          python3,
          python3-xlib,
          python3-gi,

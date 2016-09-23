@@ -3,3 +3,5 @@
 src/clock.py
 src/unlock.py
 src/cinnamon-screensaver-command.py
+src/playerControl.py
+data/cinnamon-screensaver.desktop
