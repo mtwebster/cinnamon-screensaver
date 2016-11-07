@@ -35,6 +35,7 @@ app_DATA = cinnamon-screensaver-gtk3.18.css \
 
 app_SCRIPTS = cinnamon-screensaver-main.py \
               cinnamon-screensaver-command.py \
+              cinnamon-screensaver-plugin-configure.py \
               $(NULL)
 
 config.py: config.py.in Makefile

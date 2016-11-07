@@ -10,13 +10,14 @@ NULL =
         -e s!\@datadir\@!$(datadir)!        \
         < $< > $@
 
-all-local: cinnamon-screensaver cinnamon-screensaver-command
+all-local: cinnamon-screensaver cinnamon-screensaver-command cinnamon-screensaver-plugin-configure
 
-bin_SCRIPTS = cinnamon-screensaver cinnamon-screensaver-command
+bin_SCRIPTS = cinnamon-screensaver cinnamon-screensaver-command cinnamon-screensaver-plugin-configure
 
 EXTRA_DIST =                \
     cinnamon-screensaver.in \
     cinnamon-screensaver-command.in \
+    cinnamon-screensaver-plugin-configure.in \
     $(NULL)
 
 MAINTAINERCLEANFILES =          \

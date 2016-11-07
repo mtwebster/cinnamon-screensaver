@@ -10,6 +10,9 @@ import argparse
 import syslog
 import signal
 
+sys.path.insert(0, '/usr/share/cinnamon-screensaver')
+from util.screensaverPluginConfig import ScreensaverPluginConfig
+
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 class XScreensaverPlugin:
@@ -53,6 +56,13 @@ class XScreensaverPlugin:
             settings = Gio.Settings.new(schema_id="org.cinnamon.desktop.screensaver")
             hack = settings.get_string("xscreensaver-hack")
 
+        self.config = ScreensaverPluginConfig(hack)
+
+        try:
+            success, opt_args = GLib.shell_parse_argv(self.config.get_command_line())
+        except GLib.Error:
+            opt_args = []
+
         success = False
 
         for direc in directories:
@@ -60,6 +70,7 @@ class XScreensaverPlugin:
                 path = shlex.split(direc + hack)
                 path.append("-window-id")
                 path.append(str(self.xid))
+                path = path + opt_args
                 GLib.spawn_async(path)
                 success = True
                 break;
