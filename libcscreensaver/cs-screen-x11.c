@@ -413,8 +413,6 @@ cs_screen_init (CsScreen *screen)
 {
     screen->gdk_screen = gdk_screen_get_default ();
 
-    debug_mode = TRUE;
-
     screen->monitors_changed_id = g_signal_connect (screen->gdk_screen, "monitors-changed", G_CALLBACK (on_monitors_changed), screen);
     screen->screen_size_changed_id = g_signal_connect (screen->gdk_screen, "size-changed", G_CALLBACK (on_screen_changed), screen);
 

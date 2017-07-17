@@ -141,10 +141,13 @@ class Stage(Gtk.Window):
 
     def on_monitors_changed(self, screen, data=None):
         self.destroy_monitor_views()
-        self.setup_monitors()
 
-        for monitor in self.monitors:
-            self.sink_child_widget(monitor)
+        try:
+            self.setup_monitors()
+            for monitor in self.monitors:
+                self.sink_child_widget(monitor)
+        except Exception as e:
+            print("Problem setting up monitor views during monitor change event: %s" % str(e))
 
         self.overlay.queue_resize()
 
