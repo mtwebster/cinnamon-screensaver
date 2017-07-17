@@ -277,12 +277,14 @@ class Stage(Gtk.Window):
 
         try:
             if self.clock_widget != None:
+                self.clock_widget.stop_positioning()
                 self.clock_widget.destroy()
         except Exception as e:
             print(e)
 
         try:
             if self.albumart_widget != None:
+                self.albumart_widget.stop_positioning()
                 self.albumart_widget.destroy()
         except Exception as e:
             print(e)
