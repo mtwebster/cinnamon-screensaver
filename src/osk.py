@@ -6,6 +6,7 @@ gi.require_version('Caribou', '1.0')
 
 from gi.repository import Gtk, Gdk, GObject, Caribou, Gio, GLib
 
+import status
 from util import utils, trackers, settings
 from widgets.transparentButton import TransparentButton
 from baseWindow import BaseWindow
@@ -33,8 +34,7 @@ class Key(Gtk.Button):
         self._extended_keyboard = None
         self._grabbed = False
         self._eventCaptureId = 0
-
-        self.set_size_request(key.props.width * 80, 50)
+        self.width = key.props.width
 
         self.set_label(self._key.props.label)
 
@@ -117,6 +117,13 @@ class OnScreenKeyboard(BaseWindow):
 
         self.props.margin = 30
 
+        smallest_width, smallest_height = status.screen.get_smallest_monitor_sizes()
+
+        self.max_width = min(smallest_width, 1000) - 60
+        self.max_height = min(smallest_height / 3, 300) - 60 
+
+        print(self.max_width, self.max_height)
+
         self._group_stack = None
 
         self.base_stack = Gtk.Stack()
@@ -196,9 +203,12 @@ class OnScreenKeyboard(BaseWindow):
         rows = level.get_rows()
 
         for row in rows:
-            self._add_rows(row.get_columns(), box)
+            self._add_rows(row.get_columns(), box, self.max_height / len(rows))
 
-    def _add_rows(self, keys, box):
+    def _add_rows(self, keys, box, row_height):
+        num_keys = 0
+        row_children = []
+
         row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 
         for key in keys:
@@ -210,6 +220,9 @@ class OnScreenKeyboard(BaseWindow):
 
             for child in children:
                 button = Key(child)
+
+                num_keys += button.width
+                row_children.append(button)
 
                 if child.props.align == "right":
                     right_box_members.append(button)
@@ -226,10 +239,15 @@ class OnScreenKeyboard(BaseWindow):
                     button.connect("clicked", self.on_caribou_button_clicked)
 
             if left_box.get_children():
-                row.pack_start(left_box, True, True, 2)
+                row.pack_start(left_box, True, True, 0)
 
             if right_box.get_children():
-                row.pack_end(right_box, True, True, 2)
+                row.pack_end(right_box, True, True, 0)
+
+        key_width = (self.max_width / (num_keys )) - 4
+
+        for child in row_children:
+            child.set_size_request(key_width * child.width, row_height - 4)
 
         box.pack_start(row, False, False, 2)
 
