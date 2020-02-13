@@ -5,6 +5,7 @@ import os
 
 from dbusdepot.baseClient import BaseClient
 from dbusdepot.loginInterface import LoginInterface
+import status
 
 class LogindClient(LoginInterface, BaseClient):
     """
@@ -75,11 +76,23 @@ class LogindClient(LoginInterface, BaseClient):
         """
         self.session_proxy = CScreensaver.LogindSessionProxy.new_for_bus_finish(result)
 
-        self.session_proxy.connect("unlock", lambda proxy: self.emit("unlock"))
-        self.session_proxy.connect("lock", lambda proxy: self.emit("lock"))
+        self.session_proxy.connect("unlock", self.on_unlock)
+        self.session_proxy.connect("lock", self.on_lock)
         self.session_proxy.connect("notify::active", self.on_active_changed)
 
         self.emit("startup-status", True)
+
+    def on_unlock(self, proxy):
+        if status.Debug:
+            print("Received logind session unlock signal")
+
+        self.emit("unlock")
+
+    def on_lock(self, proxy):
+        if status.Debug:
+            print("Received logind session lock signal")
+
+        self.emit("lock")
 
     def on_active_changed(self, proxy, pspec, data=None):
         if self.session_proxy.get_property("active"):
