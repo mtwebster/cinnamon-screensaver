@@ -23,6 +23,7 @@ from dbusdepot.uPowerClient import UPowerClient as _UPowerClient
 from dbusdepot.keybindingHandlerClient import KeybindingHandlerClient as _KeybindingHandlerClient
 from dbusdepot.mediaPlayerWatcher import MediaPlayerWatcher as _MediaPlayerWatcher
 from dbusdepot.accountsServiceClient import AccountsServiceClient as _AccountsServiceClient
+from dbusdepot.muffinClient import MuffinClient as _MuffinClient
 
 CinnamonClient = _CinnamonClient()
 SessionClient = _SessionClient()
@@ -30,6 +31,7 @@ UPowerClient = _UPowerClient()
 KeybindingHandlerClient = _KeybindingHandlerClient()
 MediaPlayerWatcher = _MediaPlayerWatcher()
 AccountsServiceClient = _AccountsServiceClient()
+MuffinClient = _MuffinClient()
 
 # The notification watcher is a C introspected class - some of the functions it uses
 # don't work well via introspection.

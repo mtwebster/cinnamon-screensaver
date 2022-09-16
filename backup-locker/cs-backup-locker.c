@@ -115,7 +115,7 @@ backup_window_show (GtkWidget *widget)
         GTK_WIDGET_CLASS (backup_window_parent_class)->show (widget);
     }
 
-    cs_gdk_event_filter_start (BACKUP_WINDOW (widget)->event_filter);
+    cs_gdk_event_filter_start (BACKUP_WINDOW (widget)->event_filter, FALSE);
 }
 
 static void window_grab_broken (gpointer data);

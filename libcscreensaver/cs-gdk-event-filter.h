@@ -36,7 +36,7 @@ GType                        cs_gdk_event_filter_get_type           (void);
 
 CsGdkEventFilter            *cs_gdk_event_filter_new (GtkWidget *managed_window, gulong pretty_xid);
 
-void                         cs_gdk_event_filter_start (CsGdkEventFilter *filter);
+void                         cs_gdk_event_filter_start (CsGdkEventFilter *filter, gboolean fractional_scaling);
 
 void                         cs_gdk_event_filter_stop  (CsGdkEventFilter *filter);
 

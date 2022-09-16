@@ -256,7 +256,7 @@ class Stage(Gtk.Window):
 
         self.setup_children()
 
-        self.gdk_filter.start()
+        self.gdk_filter.start(singletons.MuffinClient.get_using_fractional_scaling())
 
         trackers.con_tracker_get().disconnect(self.overlay,
                                               "realize",

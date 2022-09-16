@@ -13,6 +13,7 @@
 #ifdef HAVE_SHAPE_EXT
 #include <X11/extensions/shape.h>
 #endif
+#include <X11/Xatom.h>
 #include <gtk/gtkx.h>
 #include <string.h>
 
@@ -249,6 +250,24 @@ select_shape_events (CsGdkEventFilter *filter)
 #endif
 }
 
+static void
+disable_unredirection (CsGdkEventFilter *filter)
+{
+    GdkWindow *gdk_window;
+    guchar _NET_WM_BYPASS_COMPOSITOR_HINT_OFF = 2;
+
+    gdk_window = gtk_widget_get_window (filter->managed_window);
+
+    gdk_x11_display_error_trap_push (filter->display);
+
+    XChangeProperty (GDK_DISPLAY_XDISPLAY (filter->display), GDK_WINDOW_XID (gdk_window),
+                     XInternAtom (GDK_DISPLAY_XDISPLAY (filter->display), "_NET_WM_BYPASS_COMPOSITOR", TRUE),
+                     XA_CARDINAL, 32, PropModeReplace, &_NET_WM_BYPASS_COMPOSITOR_HINT_OFF, 1);
+    XFlush (GDK_DISPLAY_XDISPLAY (filter->display));
+
+    gdk_x11_display_error_trap_pop_ignored (filter->display);
+}
+
 static GdkFilterReturn
 xevent_filter (GdkXEvent *xevent,
                GdkEvent  *event,
@@ -297,10 +316,15 @@ cs_gdk_event_filter_class_init (CsGdkEventFilterClass *klass)
 }
 
 void
-cs_gdk_event_filter_start (CsGdkEventFilter *filter)
+cs_gdk_event_filter_start (CsGdkEventFilter *filter, gboolean fractional_scaling)
 {
     select_popup_events (filter);
     select_shape_events (filter);
+
+    if (fractional_scaling)
+    {
+        disable_unredirection (filter);
+    }
 
     gdk_window_add_filter (NULL, (GdkFilterFunc) xevent_filter, filter);
 }
