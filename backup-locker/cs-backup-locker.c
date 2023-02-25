@@ -80,7 +80,7 @@ root_window_size_changed (CsGdkEventFilter *filter,
     GdkWindow *gdk_win;
     Display *xdisplay;
 
-    gint w, h, screen_num;
+    gint w, h, screen_num, scale_factor;
 
     gdk_win = gtk_widget_get_window (GTK_WIDGET (window));
 
@@ -89,9 +89,12 @@ root_window_size_changed (CsGdkEventFilter *filter,
 
     w = DisplayWidth (xdisplay, screen_num);
     h = DisplayHeight (xdisplay, screen_num);
+    scale_factor = gdk_window_get_scale_factor (gdk_win);
 
     gdk_window_move_resize (gtk_widget_get_window (GTK_WIDGET (window)), 
-                            0, 0, w, h);
+                            0, 0,
+                            w / scale_factor + 1,
+                            h / scale_factor + 1);
     position_info_box (window);
 
     gtk_widget_queue_resize (GTK_WIDGET (window));
@@ -106,16 +109,6 @@ paint_background (GtkWidget    *widget,
     cairo_paint (cr);
 
     return FALSE;
-}
-
-static void
-backup_window_show (GtkWidget *widget)
-{
-    g_return_if_fail (BACKUP_IS_WINDOW (widget));
-
-    if (GTK_WIDGET_CLASS (backup_window_parent_class)->show) {
-        GTK_WIDGET_CLASS (backup_window_parent_class)->show (widget);
-    }
 }
 
 static void window_grab_broken (gpointer data);
@@ -211,9 +204,11 @@ backup_window_realize (GtkWidget *widget)
     cs_screen_set_net_wm_name (gtk_widget_get_window (widget),
                                "backup-locker");
 
+    gdk_window_set_title (gtk_widget_get_window (widget),
+                          "backup-locker");
+
     root_window_size_changed (window->event_filter, (gpointer) widget);
 
-    cs_gdk_event_filter_stop (window->event_filter);
     cs_gdk_event_filter_start (window->event_filter, FALSE, debug);
 }
 
@@ -372,7 +367,6 @@ backup_window_class_init (BackupWindowClass *klass)
     GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
 
     object_class->finalize = backup_window_finalize;
-    widget_class->show = backup_window_show;
     widget_class->realize = backup_window_realize;
 }
 
@@ -457,6 +451,7 @@ screensaver_window_gone (GObject      *source,
 
         if (xid == window->pretty_xid)
         {
+            gtk_window_present (GTK_WINDOW (window));
             activate_backup_window (window);
         }
 
@@ -564,8 +559,7 @@ main (int    argc,
     sigterm_src_id = g_unix_signal_add (SIGTERM, (GSourceFunc) sigterm_received, window);
     setup_window_monitor (BACKUP_WINDOW (window), xid);
 
-    gtk_widget_show (window);
-
+    gtk_widget_realize (GTK_WIDGET (window));
     gtk_main ();
 
     g_debug ("backup-locker: exit");

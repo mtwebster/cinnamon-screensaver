@@ -650,8 +650,8 @@ cs_screen_get_screen_geometry (CsScreen     *screen,
 
     geometry->x = screen->rect.x;
     geometry->y = screen->rect.y;
-    geometry->width = screen->rect.width;
-    geometry->height = screen->rect.height;
+    geometry->width = screen->rect.width+1;
+    geometry->height = screen->rect.height+1;
 }
 
 /**
