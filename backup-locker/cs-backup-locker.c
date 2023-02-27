@@ -80,7 +80,7 @@ root_window_size_changed (CsGdkEventFilter *filter,
     GdkWindow *gdk_win;
     Display *xdisplay;
 
-    gint w, h, screen_num, scale_factor;
+    gint w, h, screen_num;
 
     gdk_win = gtk_widget_get_window (GTK_WIDGET (window));
 
@@ -89,12 +89,9 @@ root_window_size_changed (CsGdkEventFilter *filter,
 
     w = DisplayWidth (xdisplay, screen_num);
     h = DisplayHeight (xdisplay, screen_num);
-    scale_factor = gdk_window_get_scale_factor (gdk_win);
 
     gdk_window_move_resize (gtk_widget_get_window (GTK_WIDGET (window)), 
-                            0, 0,
-                            w / scale_factor + 1,
-                            h / scale_factor + 1);
+                            0, 0, w, h);
     position_info_box (window);
 
     gtk_widget_queue_resize (GTK_WIDGET (window));
