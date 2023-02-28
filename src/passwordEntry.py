@@ -149,12 +149,12 @@ class PasswordEntry(Gtk.Entry):
 
     def start_progress(self):
         self.set_progress_pulse_step(0.2)
-        trackers.timer_tracker_get().start("auth-progress",
+        trackers.timer_tracker_get().start("auth-progress-%s" % str(self),
                                            100,
                                            self.pulse)
 
     def stop_progress(self):
-        trackers.timer_tracker_get().cancel("auth-progress")
+        trackers.timer_tracker_get().cancel("auth-progress-%s" % str(self))
         self.set_progress_fraction(0.0)
 
     def pulse(self):

@@ -55,7 +55,8 @@ class Stage(Gtk.Window):
 
         trackers.con_tracker_get().connect(singletons.Backgrounds,
                                            "changed",
-                                           self.on_bg_changed)
+                                           self.on_bg_changed,
+                                           owner=self)
 
         self.destroying = False
 
@@ -116,7 +117,8 @@ class Stage(Gtk.Window):
 
         trackers.con_tracker_get().connect(self.power_client,
                                            "power-state-changed",
-                                           self.on_power_state_changed)
+                                           self.on_power_state_changed,
+                                           owner=self)
 
         # This filter suppresses any other windows that might share
         # our window group in muffin, from showing up over the Stage.
@@ -125,15 +127,18 @@ class Stage(Gtk.Window):
 
         trackers.con_tracker_get().connect(status.screen,
                                            "size-changed",
-                                           self.on_screen_size_changed)
+                                           self.on_screen_size_changed,
+                                           owner=self)
 
         trackers.con_tracker_get().connect(status.screen,
                                            "monitors-changed",
-                                           self.on_monitors_changed)
+                                           self.on_monitors_changed,
+                                           owner=self)
 
         trackers.con_tracker_get().connect(status.screen,
                                            "composited-changed",
-                                           self.on_composited_changed)
+                                           self.on_composited_changed,
+                                           owner=self)
 
         trackers.con_tracker_get().connect(self,
                                            "grab-broken-event",
@@ -278,7 +283,7 @@ class Stage(Gtk.Window):
                 print("Problem setting up on-screen keyboard: %s" % str(e))
                 self.osk = None
 
-            trackers.timer_tracker_get().start("setup-delayed-components",
+            trackers.timer_tracker_get().start("setup-delayed-components-%s" % str(self),
                                                2000,
                                                self.setup_delayed_components)
         else:
@@ -381,11 +386,13 @@ class Stage(Gtk.Window):
 
         trackers.con_tracker_get().disconnect(singletons.Backgrounds,
                                               "changed",
-                                              self.on_bg_changed)
+                                              self.on_bg_changed,
+                                              owner=self)
 
         trackers.con_tracker_get().disconnect(self.power_client,
                                               "power-state-changed",
-                                              self.on_power_state_changed)
+                                              self.on_power_state_changed,
+                                              owner=self)
 
         trackers.con_tracker_get().disconnect(self,
                                               "grab-broken-event",
@@ -393,7 +400,7 @@ class Stage(Gtk.Window):
 
         self.set_timeout_active(None, False)
 
-        trackers.timer_tracker_get().cancel("setup-delayed-components")
+        trackers.timer_tracker_get().cancel("setup-delayed-components-%s" % str(self))
         self.destroy_children()
 
         self.gdk_filter.stop()
@@ -401,15 +408,18 @@ class Stage(Gtk.Window):
 
         trackers.con_tracker_get().disconnect(status.screen,
                                               "size-changed",
-                                              self.on_screen_size_changed)
+                                              self.on_screen_size_changed,
+                                              owner=self)
 
         trackers.con_tracker_get().disconnect(status.screen,
                                               "monitors-changed",
-                                              self.on_monitors_changed)
+                                              self.on_monitors_changed,
+                                              owner=self)
 
         trackers.con_tracker_get().disconnect(self.overlay,
                                               "get-child-position",
-                                              self.position_overlay_child)
+                                              self.position_overlay_child,
+                                              owner=self)
 
         self.destroy()
 
@@ -587,11 +597,11 @@ class Stage(Gtk.Window):
         Start or stop the dialog timer
         """
         if active and not status.InteractiveDebug:
-            trackers.timer_tracker_get().start("wake-timeout",
+            trackers.timer_tracker_get().start("wake-timeout-%s" % str(self),
                                                c.UNLOCK_TIMEOUT * 1000,
                                                self.on_wake_timeout)
         else:
-            trackers.timer_tracker_get().cancel("wake-timeout")
+            trackers.timer_tracker_get().cancel("wake-timeout-%s" % str(self))
 
     def on_wake_timeout(self):
         """

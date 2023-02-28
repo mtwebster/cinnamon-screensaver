@@ -117,8 +117,8 @@ class ConnectionTracker:
     def __init__(self):
         self.connections = {}
 
-    def _name(self, instance, signal, callback):
-        name = "%s-%s-%s" % (str(hash(instance)), signal, str(hash(callback)))
+    def _name(self, instance, signal, callback, owner):
+        name = "%s-%s-%s-%s" % (str(hash(instance)), signal, str(hash(callback)), owner)
 
         return name
 
@@ -155,11 +155,11 @@ class ConnectionTracker:
         debug_sigs("_cleanup_disposed", type_name, name)
         self._disconnect_by_name(name)
 
-    def connect(self, instance, signal, callback, *data):
+    def connect(self, instance, signal, callback, *data, owner="none"):
         """
         Wrapper for instance.connect()
         """
-        name = self._name(instance, signal, callback)
+        name = self._name(instance, signal, callback, str(owner))
         self._disconnect_by_name(name)
 
         if data:
@@ -172,11 +172,11 @@ class ConnectionTracker:
 
         self._connect_to_dispose(name, instance, callback)
 
-    def connect_after(self, instance, signal, callback, *data):
+    def connect_after(self, instance, signal, callback, *data, owner="none"):
         """
         Wrapper for instance.connect_after()
         """
-        name = self._name(instance, signal, callback)
+        name = self._name(instance, signal, callback, str(owner))
         self._disconnect_by_name(name)
 
         if data:
@@ -189,29 +189,29 @@ class ConnectionTracker:
 
         self._connect_to_dispose(name, instance, callback)
 
-    def handler_block(self, instance, signal, callback):
+    def handler_block(self, instance, signal, callback, owner="none"):
         """
         Wrapper for g_signal_handler_block().
         """
-        name = self._name(instance, signal, callback)
+        name = self._name(instance, signal, callback, str(owner))
 
         if self.connections[name]:
             self.connections[name][1].handler_block(self.connections[name][0])
 
-    def handler_unblock(self, instance, signal, callback):
+    def handler_unblock(self, instance, signal, callback, owner="none"):
         """
         Wrapper for g_signal_handler_unblock()
         """
-        name = self._name(instance, signal, callback)
+        name = self._name(instance, signal, callback, str(owner))
 
         if self.connections[name]:
             self.connections[name][1].handler_unblock(self.connections[name][0])
 
-    def disconnect(self, instance, signal, callback):
+    def disconnect(self, instance, signal, callback, owner="none"):
         """
         Wrapper for instance.disconnect()
         """
-        name = self._name(instance, signal, callback)
+        name = self._name(instance, signal, callback, str(owner))
         debug_sigs("disconnect", name)
 
         self._disconnect_by_name(name)
@@ -223,8 +223,14 @@ class ConnectionTracker:
         print(" * g-signal - mediaPlayerWatcher.py (player listener)             *")
         print(" * idle-changed - manager.py (idle listener for GnomeSession)     *")
         print(" * lock - singletons.py (logind/consolekit listeners              *")
+        print(" * lock - singletons.py (logind/consolekit listeners              *")
         print(" * unlock - singletons.py (logind/consolekit listeners            *")
         print(" * active - singletons.py (logind/consolekit listeners            *")
+        print(" *                                                                *")
+        print(" * If there is media playback, two additional signals may exist:  *")
+        print(" *                                                                *")
+        print(" * notify::playback-status - mediaPlayerWatcher.py                *")
+        print(" * notify::metadata - mediaPlayerWatcher.py                       *")
         print(" ******************************************************************/")
         print("")
         if len(self.connections) > 5:
