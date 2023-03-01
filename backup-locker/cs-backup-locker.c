@@ -121,7 +121,6 @@ activate_backup_window (BackupWindow *window)
 
     g_signal_connect_swapped (window, "grab-broken-event", G_CALLBACK (window_grab_broken), window);
 
-    gtk_widget_show (window->info_box);
     position_info_box (window);
 
     window->should_grab = TRUE;
@@ -159,7 +158,6 @@ on_composited_changed (gpointer data)
     if (gtk_widget_get_realized (GTK_WIDGET (window)))
     {
         gtk_widget_hide (GTK_WIDGET (window));
-        gtk_widget_unrealize (GTK_WIDGET (window));
         gtk_widget_realize (GTK_WIDGET (window));
 
         if (window->should_grab)
@@ -169,8 +167,6 @@ on_composited_changed (gpointer data)
             user_time = gdk_x11_display_get_user_time (gtk_widget_get_display (GTK_WIDGET (window)));
             gdk_x11_window_set_user_time (gtk_widget_get_window (GTK_WIDGET (window)), user_time);
         }
-
-        gtk_widget_show (GTK_WIDGET (window));
     }
 
     if (window->should_grab)
@@ -186,7 +182,19 @@ screensaver_window_changed (CsGdkEventFilter *filter,
 {
     backup_window_ungrab (window);
 
+    g_debug ("New screensaver window, hiding ourselves");
+
+    gtk_widget_hide (GTK_WIDGET (window));
+    gtk_widget_realize (GTK_WIDGET (window));
+
     setup_window_monitor (window, xwindow);
+}
+
+static void
+screensaver_window_unmapped (CsGdkEventFilter *filter,
+                             BackupWindow     *window)
+{
+    gtk_window_present (GTK_WINDOW (window));
 }
 
 static void
@@ -195,11 +203,15 @@ backup_window_realize (GtkWidget *widget)
     if (GTK_WIDGET_CLASS (backup_window_parent_class)->realize) {
         GTK_WIDGET_CLASS (backup_window_parent_class)->realize (widget);
     }
+    g_debug ("Backup window realized");
 
     BackupWindow *window = BACKUP_WINDOW (widget);
 
     cs_screen_set_net_wm_name (gtk_widget_get_window (widget),
                                "backup-locker");
+
+    gdk_window_set_title (gtk_widget_get_window (widget),
+                          "backup-locker");
 
     root_window_size_changed (window->event_filter, (gpointer) widget);
 
@@ -325,8 +337,6 @@ backup_window_init (BackupWindow *window)
     g_signal_connect_swapped (gdk_screen_get_default (), "composited-changed", G_CALLBACK (on_composited_changed), window);
 
     gtk_widget_show_all (box);
-    gtk_widget_set_no_show_all (box, TRUE);
-    gtk_widget_hide (box);
     window->info_box = box;
 
     g_signal_connect_swapped (window->info_box, "realize", G_CALLBACK (position_info_box), window);
@@ -381,6 +391,7 @@ backup_window_new (gulong pretty_xid)
     window->event_filter = cs_gdk_event_filter_new (GTK_WIDGET (window), pretty_xid);
     g_signal_connect (window->event_filter, "xscreen-size", G_CALLBACK (root_window_size_changed), window);
     g_signal_connect (window->event_filter, "screensaver-window-changed", G_CALLBACK (screensaver_window_changed), window);
+    g_signal_connect (window->event_filter, "screensaver-window-unmapped", G_CALLBACK (screensaver_window_unmapped), window);
 
     window->pretty_xid = pretty_xid;
 
@@ -446,13 +457,12 @@ screensaver_window_gone (GObject      *source,
 
         if (xid == window->pretty_xid)
         {
+            gtk_window_present (GTK_WINDOW (window));
             activate_backup_window (window);
         }
 
         g_mutex_unlock (&pretty_xid_mutex);
     }
-
-    g_clear_object (&task_cancellable);
 }
 
 static void
@@ -464,6 +474,12 @@ setup_window_monitor (BackupWindow *window, gulong xid)
 
     g_mutex_lock (&pretty_xid_mutex);
     window->pretty_xid = xid;
+
+    if (window_monitor_cancellable != NULL)
+    {
+        g_cancellable_cancel (window_monitor_cancellable);
+        g_object_unref (window_monitor_cancellable);
+    }
 
     window_monitor_cancellable = g_cancellable_new ();
     task = g_task_new (NULL, window_monitor_cancellable, screensaver_window_gone, window);
@@ -485,6 +501,7 @@ sigterm_received (gpointer data)
 
     g_clear_handle_id (&sigterm_src_id, g_source_remove);
     g_cancellable_cancel (window_monitor_cancellable);
+    g_object_unref (window_monitor_cancellable);
 
     gtk_widget_destroy (window);
     gtk_main_quit ();
@@ -553,8 +570,7 @@ main (int    argc,
     sigterm_src_id = g_unix_signal_add (SIGTERM, (GSourceFunc) sigterm_received, window);
     setup_window_monitor (BACKUP_WINDOW (window), xid);
 
-    gtk_widget_show (window);
-
+    gtk_widget_realize (GTK_WIDGET (window));
     gtk_main ();
 
     g_debug ("backup-locker: exit");

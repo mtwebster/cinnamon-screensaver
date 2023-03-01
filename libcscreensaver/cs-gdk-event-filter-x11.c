@@ -21,6 +21,7 @@
 enum {
         XSCREEN_SIZE,
         SCREENSAVER_WINDOW_CHANGED,
+        SCREENSAVER_WINDOW_UNMAPPED,
         LAST_SIGNAL
 };
 
@@ -133,6 +134,7 @@ restack (CsGdkEventFilter *filter,
             g_debug ("New screensaver window found: 0x%lx (replaces 0x%lx)", event_window, filter->pretty_xid);
             filter->pretty_xid = event_window;
             g_signal_emit (filter, signals[SCREENSAVER_WINDOW_CHANGED], 0, event_window);
+            return;
         }
     }
 
@@ -149,16 +151,12 @@ restack (CsGdkEventFilter *filter,
         }
         else
         {
-            g_debug ("BackupWindow received %s from screensaver window (0x%lx), restacking us below it.",
-                      event_type,
-                      event_window);
-
-            Window windows[] = {
-                filter->pretty_xid,
-                filter->my_xid
-            };
-
-            XRestackWindows (GDK_DISPLAY_XDISPLAY (filter->display), windows, 2);
+            if (g_strcmp0 (event_type, "UnmapNotify") == 0)
+            {
+                g_printerr ("UNMAP\n");
+                g_signal_emit (filter, signals[SCREENSAVER_WINDOW_UNMAPPED], 0);
+                return;
+            }
         }
     }
     else
@@ -186,6 +184,19 @@ cs_gdk_event_filter_xevent (CsGdkEventFilter *filter,
     /* MapNotify is used to tell us when new windows are mapped.
        ConfigureNofify is used to tell us when windows are raised. */
     switch (ev->xany.type) {
+        case UnmapNotify:
+          {
+            XUnmapEvent *xue = &ev->xunmap;
+
+            // Ignore my own events.
+            if (xue->window == filter->my_xid)
+            {
+                break;
+            }
+
+            restack (filter, xue->window, "UnmapNotify");
+            break;
+          }
         case MapNotify:
           {
             XMapEvent *xme = &ev->xmap;
@@ -294,24 +305,6 @@ select_shape_events (CsGdkEventFilter *filter)
 #endif
 }
 
-static void
-disable_unredirection (CsGdkEventFilter *filter)
-{
-    GdkWindow *gdk_window;
-    guchar _NET_WM_BYPASS_COMPOSITOR_HINT_OFF = 2;
-
-    gdk_window = gtk_widget_get_window (filter->managed_window);
-
-    gdk_x11_display_error_trap_push (filter->display);
-
-    XChangeProperty (GDK_DISPLAY_XDISPLAY (filter->display), GDK_WINDOW_XID (gdk_window),
-                     XInternAtom (GDK_DISPLAY_XDISPLAY (filter->display), "_NET_WM_BYPASS_COMPOSITOR", TRUE),
-                     XA_CARDINAL, 32, PropModeReplace, &_NET_WM_BYPASS_COMPOSITOR_HINT_OFF, 1);
-    XFlush (GDK_DISPLAY_XDISPLAY (filter->display));
-
-    gdk_x11_display_error_trap_pop_ignored (filter->display);
-}
-
 static GdkFilterReturn
 xevent_filter (GdkXEvent *xevent,
                GdkEvent  *event,
@@ -364,6 +357,12 @@ cs_gdk_event_filter_class_init (CsGdkEventFilterClass *klass)
                                               0,
                                               NULL, NULL, NULL,
                                               G_TYPE_NONE, 1, G_TYPE_ULONG);
+        signals[SCREENSAVER_WINDOW_UNMAPPED] = g_signal_new ("screensaver-window-unmapped",
+                                                             G_TYPE_FROM_CLASS (object_class),
+                                                             G_SIGNAL_RUN_LAST,
+                                                             0,
+                                                             NULL, NULL, NULL,
+                                                             G_TYPE_NONE, 0);
 }
 
 static void
@@ -382,11 +381,6 @@ cs_gdk_event_filter_start (CsGdkEventFilter *filter,
 {
     select_popup_events (filter);
     select_shape_events (filter);
-
-    if (fractional_scaling)
-    {
-        disable_unredirection (filter);
-    }
 
     if (debug)
     {
