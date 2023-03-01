@@ -108,16 +108,6 @@ paint_background (GtkWidget    *widget,
     return FALSE;
 }
 
-static void
-backup_window_show (GtkWidget *widget)
-{
-    g_return_if_fail (BACKUP_IS_WINDOW (widget));
-
-    if (GTK_WIDGET_CLASS (backup_window_parent_class)->show) {
-        GTK_WIDGET_CLASS (backup_window_parent_class)->show (widget);
-    }
-}
-
 static void window_grab_broken (gpointer data);
 
 static void
@@ -348,7 +338,7 @@ backup_window_init (BackupWindow *window)
 }
 
 static void
-backup_window_finalize (GObject *object)
+backup_window_dispose (GObject *object)
 {
         BackupWindow *window;
 
@@ -359,10 +349,10 @@ backup_window_finalize (GObject *object)
 
         backup_window_ungrab (window);
 
-        g_object_unref (window->event_filter);
-        g_object_unref (window->grabber);
+        g_clear_object (&window->event_filter);
+        g_clear_object (&window->grabber);
 
-        G_OBJECT_CLASS (backup_window_parent_class)->finalize (object);
+        G_OBJECT_CLASS (backup_window_parent_class)->dispose (object);
 }
 
 static void
@@ -371,8 +361,7 @@ backup_window_class_init (BackupWindowClass *klass)
     GObjectClass   *object_class = G_OBJECT_CLASS (klass);
     GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
 
-    object_class->finalize = backup_window_finalize;
-    widget_class->show = backup_window_show;
+    object_class->dispose = backup_window_dispose;
     widget_class->realize = backup_window_realize;
 }
 
