@@ -131,6 +131,7 @@ activate_backup_window (BackupWindow *window)
 
     g_signal_connect_swapped (window, "grab-broken-event", G_CALLBACK (window_grab_broken), window);
 
+    gtk_widget_set_opacity (GTK_WIDGET (window), 1.0);
     gtk_widget_show (window->info_box);
     position_info_box (window);
 
@@ -196,6 +197,8 @@ screensaver_window_changed (CsGdkEventFilter *filter,
 {
     backup_window_ungrab (window);
 
+    gtk_widget_set_opacity (GTK_WIDGET (window), 0.0);
+
     setup_window_monitor (window, xwindow);
 }
 
@@ -211,6 +214,8 @@ backup_window_realize (GtkWidget *widget)
     cs_screen_set_net_wm_name (gtk_widget_get_window (widget),
                                "backup-locker");
 
+    gtk_widget_set_opacity (GTK_WIDGET (window), 0.0);
+
     root_window_size_changed (window->event_filter, (gpointer) widget);
 
     cs_gdk_event_filter_stop (window->event_filter);
@@ -223,10 +228,6 @@ backup_window_init (BackupWindow *window)
     GtkWidget *box;
     GtkWidget *widget;
     PangoAttrList *attrs;
-
-    gtk_window_set_decorated (GTK_WINDOW (window), FALSE);
-    gtk_window_set_skip_taskbar_hint (GTK_WINDOW (window), TRUE);
-    gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
 
     gtk_widget_set_events (GTK_WIDGET (window),
                            gtk_widget_get_events (GTK_WIDGET (window))
