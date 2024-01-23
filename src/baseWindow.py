@@ -3,6 +3,7 @@
 from gi.repository import Gtk, GObject, Gdk
 
 from util import trackers
+import singletons
 import status
 
 class BaseWindow(Gtk.Bin):
@@ -24,6 +25,6 @@ class BaseWindow(Gtk.Bin):
 
     def update_geometry(self):
         if status.Spanned:
-            self.rect = status.screen.get_screen_geometry()
+            self.rect = singletons.MuffinClient.get_screen_geometry()
         else:
-            self.rect = status.screen.get_monitor_geometry(self.monitor_index)
+            self.rect = singletons.MuffinClient.get_monitor_geometry(self.monitor_index)

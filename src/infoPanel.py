@@ -3,6 +3,7 @@
 from gi.repository import Gtk
 
 import status
+import singletons
 from util import utils, trackers, settings
 from baseWindow import BaseWindow
 from widgets.notificationWidget import NotificationWidget
@@ -16,7 +17,7 @@ class InfoPanel(BaseWindow):
     """
     def __init__(self):
         super(InfoPanel, self).__init__()
-        self.monitor_index = status.screen.get_primary_monitor()
+        self.monitor_index = singletons.MuffinClient.get_primary_monitor()
 
         self.update_geometry()
 

@@ -123,17 +123,23 @@ class Stage(Gtk.Window):
         # For instance: Chrome and Firefox native notifications.
         self.gdk_filter = CScreensaver.GdkEventFilter.new(self, 0)
 
-        trackers.con_tracker_get().connect(status.screen,
-                                           "size-changed",
-                                           self.on_screen_size_changed)
 
-        trackers.con_tracker_get().connect(status.screen,
-                                           "monitors-changed",
-                                           self.on_monitors_changed)
+        trackers.con_tracker_get().connect(singletons.MuffinClient,
+                                           "muffin-config-changed",
+                                           self.on_muffin_config_changed)
 
-        trackers.con_tracker_get().connect(status.screen,
-                                           "composited-changed",
-                                           self.on_composited_changed)
+
+        # trackers.con_tracker_get().connect(status.screen,
+        #                                    "size-changed",
+        #                                    self.on_screen_size_changed)
+
+        # trackers.con_tracker_get().connect(status.screen,
+        #                                    "monitors-changed",
+        #                                    self.on_monitors_changed)
+
+        # trackers.con_tracker_get().connect(status.screen,
+        #                                    "composited-changed",
+        #                                    self.on_composited_changed)
 
         trackers.con_tracker_get().connect(self,
                                            "grab-broken-event",
@@ -152,31 +158,31 @@ class Stage(Gtk.Window):
         except Exception as e:
             print("Problem updating monitor views views: %s" % str(e))
 
-    def on_screen_size_changed(self, screen, data=None):
+    def on_muffin_config_changed(self, client, data=None):
         """
         The screen changing size should be acted upon immediately, to ensure coverage.
         Wallpapers are secondary.
         """
 
-        DEBUG("Stage: Received screen size-changed signal, refreshing stage")
+        DEBUG("Stage: Received muffin-config-changed signal, refreshing stage")
 
         self.emit("needs-refresh")
 
-    def on_monitors_changed(self, screen, data=None):
-        """
-        Updating monitors also will trigger an immediate stage coverage update (same
-        as on_screen_size_changed), and follow up at idle with actual monitor view
-        refreshes (wallpapers.)
-        """
-        DEBUG("Stage: Received screen monitors-changed signal, refreshing stage")
+    # def on_monitors_changed(self, screen, data=None):
+    #     """
+    #     Updating monitors also will trigger an immediate stage coverage update (same
+    #     as on_screen_size_changed), and follow up at idle with actual monitor view
+    #     refreshes (wallpapers.)
+    #     """
+    #     DEBUG("Stage: Received screen monitors-changed signal, refreshing stage")
 
-        self.emit("needs-refresh")
+    #     self.emit("needs-refresh")
 
-    def on_composited_changed(self, screen, data=None):
-        if self.get_realized():
-            DEBUG("Stage: Received screen composited-changed signal, refreshing stage")
+    # def on_composited_changed(self, screen, data=None):
+    #     if self.get_realized():
+    #         DEBUG("Stage: Received screen composited-changed signal, refreshing stage")
 
-            self.emit("needs-refresh")
+    #         self.emit("needs-refresh")
 
     def on_grab_broken_event(self, widget, event, data=None):
         GObject.idle_add(self.manager.grab_stage)
@@ -399,17 +405,21 @@ class Stage(Gtk.Window):
         self.gdk_filter.stop()
         self.gdk_filter = None
 
-        trackers.con_tracker_get().disconnect(status.screen,
-                                              "size-changed",
-                                              self.on_screen_size_changed)
+        trackers.con_tracker_get().disconnect(singletons.MuffinClient,
+                                              "muffin-config-changed",
+                                              self.on_muffin_config_changed)
 
-        trackers.con_tracker_get().disconnect(status.screen,
-                                              "monitors-changed",
-                                              self.on_monitors_changed)
+        # trackers.con_tracker_get().disconnect(status.screen,
+        #                                       "size-changed",
+        #                                       self.on_screen_size_changed)
 
-        trackers.con_tracker_get().disconnect(self.overlay,
-                                              "get-child-position",
-                                              self.position_overlay_child)
+        # trackers.con_tracker_get().disconnect(status.screen,
+        #                                       "monitors-changed",
+        #                                       self.on_monitors_changed)
+
+        # trackers.con_tracker_get().disconnect(self.overlay,
+        #                                       "get-child-position",
+        #                                       self.position_overlay_child)
 
         self.destroy()
 
@@ -422,9 +432,9 @@ class Stage(Gtk.Window):
         status.Spanned = settings.bg_settings.get_enum("picture-options") == CDesktopEnums.BackgroundStyle.SPANNED
 
         if status.InteractiveDebug or status.Spanned:
-            monitors = (status.screen.get_primary_monitor(),)
+            monitors = (singletons.MuffinClient.get_primary_monitor(),)
         else:
-            n = status.screen.get_n_monitors()
+            n = singletons.MuffinClient.get_n_monitors()
             monitors = ()
             for i in range(n):
                 monitors += (i,)
@@ -479,7 +489,7 @@ class Stage(Gtk.Window):
         Initially invisible, regardless - its visibility is controlled via its
         own positioning timer.
         """
-        self.clock_widget = ClockWidget(self.away_message, status.screen.get_mouse_monitor(), status.screen.get_low_res_mode())
+        self.clock_widget = ClockWidget(self.away_message, singletons.MuffinClient.get_mouse_monitor(), singletons.MuffinClient.get_low_res_mode())
         self.add_child_widget(self.clock_widget)
 
         self.floaters.append(self.clock_widget)
@@ -496,7 +506,7 @@ class Stage(Gtk.Window):
         Initially invisible, regardless - its visibility is controlled via its
         own positioning timer.
         """
-        self.albumart_widget = AlbumArt(None, status.screen.get_mouse_monitor())
+        self.albumart_widget = AlbumArt(None, singletons.MuffinClient.get_mouse_monitor())
         self.add_child_widget(self.albumart_widget)
 
         self.floaters.append(self.albumart_widget)
@@ -640,7 +650,7 @@ class Stage(Gtk.Window):
         if status.Awake:
             return
 
-        status.screen.place_pointer_in_primary_monitor ()
+        singletons.MuffinClient.place_pointer_in_primary_monitor ()
 
         utils.clear_clipboards(self.unlock_dialog)
 
@@ -743,14 +753,10 @@ class Stage(Gtk.Window):
         """
 
         if status.InteractiveDebug:
-            monitor_n = status.screen.get_primary_monitor()
-            self.rect = status.screen.get_monitor_geometry(monitor_n)
+            monitor_n = singletons.MuffinClient.get_primary_monitor()
+            self.rect = singletons.MuffinClient.get_monitor_geometry(monitor_n)
         else:
-            self.rect = status.screen.get_screen_geometry()
-
-            scale = status.screen.get_global_scale()
-            self.rect.width *= scale
-            self.rect.height *= scale
+            self.rect = singletons.MuffinClient.get_screen_geometry()
 
         DEBUG("Stage.update_geometry - new backdrop position: %d, %d  new size: %d x %d" % (self.rect.x, self.rect.y, self.rect.width, self.rect.height))
 
@@ -768,16 +774,16 @@ class Stage(Gtk.Window):
 
     def get_mouse_monitor(self):
         if status.InteractiveDebug:
-            return status.screen.get_primary_monitor()
+            return singletons.MuffinClient.get_primary_monitor()
         else:
-            return status.screen.get_mouse_monitor()
+            return singletons.MuffinClient.get_mouse_monitor()
 
     def maybe_update_layout(self):
         """
         Called on all user events, moves widgets to the currently
         focused monitor if it changes (whichever monitor the mouse is in)
         """
-        current_focus_monitor = status.screen.get_mouse_monitor()
+        current_focus_monitor = singletons.MuffinClient.get_mouse_monitor()
 
         if self.last_focus_monitor == -1:
             self.last_focus_monitor = current_focus_monitor
@@ -833,8 +839,8 @@ class Stage(Gtk.Window):
             UnlockDialog always shows on the currently focused monitor (the one the
             mouse is currently in), and is kept centered.
             """
-            monitor = status.screen.get_mouse_monitor()
-            monitor_rect = status.screen.get_monitor_geometry(monitor)
+            monitor = singletons.MuffinClient.get_mouse_monitor()
+            monitor_rect = singletons.MuffinClient.get_monitor_geometry(monitor)
 
             min_rect, nat_rect = child.get_preferred_size()
 
@@ -859,11 +865,11 @@ class Stage(Gtk.Window):
             min_rect, nat_rect = child.get_preferred_size()
 
             if status.Awake:
-                current_monitor = status.screen.get_mouse_monitor()
+                current_monitor = singletons.MuffinClient.get_mouse_monitor()
             else:
                 current_monitor = child.current_monitor
 
-            monitor_rect = status.screen.get_monitor_geometry(current_monitor)
+            monitor_rect = singletons.MuffinClient.get_monitor_geometry(current_monitor)
 
             region_w = monitor_rect.width / 3
             region_h = monitor_rect.height
@@ -950,8 +956,8 @@ class Stage(Gtk.Window):
             min_rect, nat_rect = child.get_preferred_size()
 
             if status.Awake:
-                current_monitor = status.screen.get_mouse_monitor()
-                monitor_rect = status.screen.get_monitor_geometry(current_monitor)
+                current_monitor = singletons.MuffinClient.get_mouse_monitor()
+                monitor_rect = singletons.MuffinClient.get_monitor_geometry(current_monitor)
                 allocation.x = monitor_rect.x
                 allocation.y = monitor_rect.y
                 allocation.width = nat_rect.width
@@ -974,8 +980,8 @@ class Stage(Gtk.Window):
             min_rect, nat_rect = child.get_preferred_size()
 
             if status.Awake:
-                current_monitor = status.screen.get_mouse_monitor()
-                monitor_rect = status.screen.get_monitor_geometry(current_monitor)
+                current_monitor = singletons.MuffinClient.get_mouse_monitor()
+                monitor_rect = singletons.MuffinClient.get_monitor_geometry(current_monitor)
                 allocation.x = monitor_rect.x + monitor_rect.width - nat_rect.width
                 allocation.y = monitor_rect.y
                 allocation.width = nat_rect.width
@@ -997,8 +1003,8 @@ class Stage(Gtk.Window):
             """
             min_rect, nat_rect = child.get_preferred_size()
 
-            current_monitor = status.screen.get_mouse_monitor()
-            monitor_rect = status.screen.get_monitor_geometry(current_monitor)
+            current_monitor = singletons.MuffinClient.get_mouse_monitor()
+            monitor_rect = singletons.MuffinClient.get_monitor_geometry(current_monitor)
             allocation.x = monitor_rect.x
             allocation.y = monitor_rect.y + monitor_rect.height - (monitor_rect.height / 3)
             allocation.width = monitor_rect.width

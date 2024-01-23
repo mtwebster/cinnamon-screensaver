@@ -7,6 +7,7 @@ gi.require_version('Caribou', '1.0')
 from gi.repository import Gtk, Gdk, GObject, Caribou, Gio, GLib
 
 import status
+import singletons
 from util import utils, trackers, settings
 from widgets.transparentButton import TransparentButton
 from baseWindow import BaseWindow
@@ -139,7 +140,7 @@ class OnScreenKeyboard(BaseWindow):
 
         self.props.margin = 30
 
-        smallest_width, smallest_height = status.screen.get_smallest_monitor_sizes()
+        smallest_width, smallest_height = singletons.MuffinClient.get_smallest_monitor_sizes()
 
         self.max_width = min(smallest_width, LARGEST_OSK_WIDTH) - 60
         self.max_height = min(smallest_height / 3, LARGEST_OSK_HEIGHT) - 60 

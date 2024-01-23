@@ -34,7 +34,7 @@ class AlbumArt(Floating, BaseWindow):
 
         self.current_url = None
 
-        self.image = FramedImage(status.screen.get_low_res_mode(), scale_up=True)
+        self.image = FramedImage(singletons.MuffinClient.get_low_res_mode(), scale_up=True)
         self.image.show()
         self.image.set_opacity(0.0)
         self.add(self.image)

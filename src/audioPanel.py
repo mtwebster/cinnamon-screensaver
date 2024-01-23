@@ -7,6 +7,7 @@ from volumeControl import VolumeControl
 from playerControl import PlayerControl
 from util import utils, settings
 import status
+import singletons
 
 class AudioPanel(BaseWindow):
     def __init__(self):
@@ -17,7 +18,7 @@ class AudioPanel(BaseWindow):
         """
         super(AudioPanel, self).__init__()
 
-        self.monitor_index = status.screen.get_primary_monitor()
+        self.monitor_index = singletons.MuffinClient.get_primary_monitor()
 
         self.update_geometry()
 
